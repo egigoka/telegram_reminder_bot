@@ -1,10 +1,10 @@
 #! python3
 # -*- coding: utf-8 -*-
 try:
-    from commands import *
+    from commands import Time, Print, Threading
 except ImportError:
     print("Install dependency via 'pip install git+https://github.com/egigoka/commands'")
-    from commands import *
+    from commands import Time, Print, Threading
 try:
     import telebot
 except ImportError:
@@ -13,9 +13,8 @@ except ImportError:
 import time
 import os
 import telegrame
-from enum import Enum
 
-__version__ = "0.1.4"
+__version__ = "0.2.0"
 
 # Auth
 my_chat_id = 5328715
@@ -26,7 +25,7 @@ with open("token.txt", "r") as f:
 telegram_api = telebot.TeleBot(telegram_token, threaded=False)
 
 # default buttons
-button_rows = [["Add to message"], ["Get message"]]
+button_rows = [["Get message"]]
 
 main_markup = telebot.types.ReplyKeyboardMarkup()
 for button_row in button_rows:
@@ -50,13 +49,7 @@ def get_messages():
 
 
 # state
-class StateEnum(Enum):
-    NONE = 0
-    ADD = 1
-
-
 class State:
-    current = StateEnum.NONE
     previous_hour = None
     previous_new_report_message = None
     hello_said = os.path.exists(".hello_said")
@@ -70,31 +63,15 @@ def _start_bot_receiver():
         if message.chat.id == my_chat_id:
             if message.text:
                 text = message.text
-                if State.current == StateEnum.ADD:
+                if text == "Get message":
+                    reply = get_messages()
+                    telegrame.send_message(telegram_api, message.chat.id, reply, disable_notification=True)
+                    telegram_api.delete_message(my_chat_id, message.id)
+                else:
                     if State.previous_write_message:
                         telegram_api.delete_message(my_chat_id, State.previous_write_message)
                     add_message(text)
                     telegrame.delete_message(telegram_api, my_chat_id, message.id)
-                    State.current = StateEnum.NONE
-                elif State.current == StateEnum.NONE:
-                    if text == "Add to message":
-                        reply = "Write message"
-                        messages = telegrame.send_message(telegram_api, message.chat.id, reply)
-                        if messages:
-                            State.previous_write_message = messages[0].id
-                        try:
-                            telegram_api.delete_message(my_chat_id, message.id)
-                        except Exception:
-                            pass
-                        State.current = StateEnum.ADD
-                    elif text == "Get message":
-                        reply = get_messages()
-                        telegrame.send_message(telegram_api, message.chat.id, reply, disable_notification=True)
-                        try:
-                            telegram_api.delete_message(my_chat_id, message.id)
-                        except Exception:
-                            pass
-
             else:
                 reply = "Stickers doesn't supported"
                 telegrame.send_message(telegram_api, message.chat.id, reply, disable_notification=True)
