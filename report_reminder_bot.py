@@ -14,7 +14,7 @@ import time
 import os
 import telegrame
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 # Auth
 my_chat_id = 5328715
@@ -67,9 +67,13 @@ def _start_bot_receiver():
                     reply = get_messages()
                     telegrame.send_message(telegram_api, message.chat.id, reply, disable_notification=True)
                     telegram_api.delete_message(my_chat_id, message.id)
+                    if State.previous_write_message:
+                        telegram_api.delete_message(my_chat_id, State.previous_write_message)
+                        State.previous_write_message = None
                 else:
                     if State.previous_write_message:
                         telegram_api.delete_message(my_chat_id, State.previous_write_message)
+                        State.previous_write_message = None
                     add_message(text)
                     telegrame.delete_message(telegram_api, my_chat_id, message.id)
             else:
@@ -96,6 +100,7 @@ def _start_bot_sender():
         if State.previous_hour != current_hour:
             if State.previous_new_report_message:
                 telegrame.delete_message(telegram_api, my_chat_id, State.previous_new_report_message)
+                State.previous_new_report_message = None
             State.previous_hour = current_hour
             messages = telegrame.send_message(telegram_api, my_chat_id, "New report is needed")
             if messages:
