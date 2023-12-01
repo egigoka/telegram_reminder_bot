@@ -14,7 +14,7 @@ import time
 import os
 import telegrame
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 # Auth
 my_chat_id = 5328715
@@ -53,7 +53,6 @@ class State:
     previous_hour = None
     previous_new_report_message = None
     hello_said = os.path.exists(".hello_said")
-    previous_write_message = None
 
 
 # main logic
@@ -67,15 +66,12 @@ def _start_bot_receiver():
                     reply = get_messages()
                     telegrame.send_message(telegram_api, message.chat.id, reply, disable_notification=True)
                     telegram_api.delete_message(my_chat_id, message.id)
-                    if State.previous_write_message:
-                        telegram_api.delete_message(my_chat_id, State.previous_write_message)
-                        State.previous_write_message = None
                 else:
-                    if State.previous_write_message:
-                        telegram_api.delete_message(my_chat_id, State.previous_write_message)
-                        State.previous_write_message = None
                     add_message(text)
                     telegrame.delete_message(telegram_api, my_chat_id, message.id)
+                    if State.previous_new_report_message:
+                        telegram_api.delete_message(my_chat_id, State.previous_new_report_message)
+                        State.previous_new_report_message = None
             else:
                 reply = "Stickers doesn't supported"
                 telegrame.send_message(telegram_api, message.chat.id, reply, disable_notification=True)
